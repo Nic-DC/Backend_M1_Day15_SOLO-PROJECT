@@ -12,4 +12,4 @@ const reviewsSchema = new Schema(
   }
 );
 
-export default model("Reviwew", reviewsSchema);
+export default model("Review", reviewsSchema);

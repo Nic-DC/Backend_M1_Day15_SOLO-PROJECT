@@ -1,17 +1,40 @@
 import express from "express";
 import createHttpError from "http-errors";
 import ReviewsModel from "./model.js";
+import ProductsModel from "../products/model.js";
 import { checkReviewSchema, triggerBadRequest } from "./validator.js";
 
 const { NotFound, BadRequest } = createHttpError;
 
 const reviewsRouter = express.Router();
 
-reviewsRouter.post("/", checkReviewSchema, triggerBadRequest, async (req, res, next) => {
+reviewsRouter.post("/:productId", checkReviewSchema, triggerBadRequest, async (req, res, next) => {
   try {
-    const newReview = new ReviewsModel(req.body); // here it happens validation (thanks to Mongoose) of req.body, if it is not ok Mongoose will throw an error
-    const { _id } = await newReview.save();
-    res.status(201).send({ _id });
+    const { productId } = req.params;
+
+    const isProduct = await ProductsModel.findByIdAndUpdate(
+      productId,
+      { $push: { reviews: { ...req.body } } },
+      { new: true, runValidators: true }
+    );
+    console.log("isProduct", isProduct);
+    if (isProduct) {
+      res.status(201).send(isProduct);
+    } else {
+      console.log("hiiioiasd");
+      next(NotFound(`No product `));
+    }
+    //const isProduct = await ProductsModel.findById(productId);
+
+    //if (isProduct) {
+    //const newReview = new ReviewsModel(req.body);
+    // isProduct.reviews.push(newReview);
+
+    //}
+
+    // here it happens validation (thanks to Mongoose) of req.body, if it is not ok Mongoose will throw an error
+    // const { _id } = await newReview.save();
+    // res.status(201).send({ _id });
   } catch (error) {
     next(error);
   }
