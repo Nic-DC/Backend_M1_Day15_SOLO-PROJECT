@@ -1,10 +1,11 @@
 import express, { Router } from "express";
 import createHttpError from "http-errors";
 import ProductsModel from "./model.js";
+import { checkProductSchema, triggerBadRequest } from "./validator.js";
 
-const porductsRouter = express.Router();
+const productsRouter = express.Router();
 
-porductsRouter.post("/", async (req, res, next) => {
+productsRouter.post("/", checkProductSchema, triggerBadRequest, async (req, res, next) => {
   try {
     const newProduct = new ProductsModel(req.body); // here it happens validation (thanks to Mongoose) of req.body, if it is not ok Mongoose will throw an error
     const { _id } = await newProduct.save();
@@ -14,7 +15,7 @@ porductsRouter.post("/", async (req, res, next) => {
   }
 });
 
-porductsRouter.get("/", async (req, res, next) => {
+productsRouter.get("/", async (req, res, next) => {
   try {
     const products = await ProductsModel.find({}, { name: 1, brand: 1 });
     res.send(products);
@@ -23,7 +24,7 @@ porductsRouter.get("/", async (req, res, next) => {
   }
 });
 
-porductsRouter.get("/:productId", async (req, res, next) => {
+productsRouter.get("/:productId", async (req, res, next) => {
   try {
     const Product = await ProductsModel.findById(req.params.productId);
     if (Product) {
@@ -36,7 +37,7 @@ porductsRouter.get("/:productId", async (req, res, next) => {
   }
 });
 
-porductsRouter.put("/:productId", async (req, res, next) => {
+productsRouter.put("/:productId", async (req, res, next) => {
   try {
     const updatedProduct = await ProductsModel.findByIdAndUpdate(
       req.params.productId, // WHO you want to modify
@@ -60,7 +61,7 @@ porductsRouter.put("/:productId", async (req, res, next) => {
   }
 });
 
-porductsRouter.delete("/:productId", async (req, res, next) => {
+productsRouter.delete("/:productId", async (req, res, next) => {
   try {
     const deletedProduct = await ProductsModel.findByIdAndDelete(req.params.productId);
     if (deletedProduct) {
@@ -73,4 +74,4 @@ porductsRouter.delete("/:productId", async (req, res, next) => {
   }
 });
 
-export default porductsRouter;
+export default productsRouter;
