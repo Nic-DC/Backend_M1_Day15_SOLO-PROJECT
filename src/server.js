@@ -2,6 +2,7 @@ import express from "express";
 import listEndpoints from "express-list-endpoints";
 import cors from "cors";
 import mongoose from "mongoose";
+import productsRouter from "./api/products/index.js";
 // import blogPostsRouter from "./api/blogPosts/index.js";
 // import authorsRouter from "./api/authors/index.js";
 // import usersRouter from "./api/users/index.js";
@@ -15,7 +16,7 @@ server.use(cors());
 server.use(express.json());
 
 // ******************************** ENDPOINTS *****************************************
-// server.use("/blogPosts", blogPostsRouter);
+server.use("/products", productsRouter);
 // server.use("/authors", authorsRouter);
 // server.use("/users", usersRouter);
 
