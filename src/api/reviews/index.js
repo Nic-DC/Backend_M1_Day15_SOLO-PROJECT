@@ -63,38 +63,54 @@ reviewsRouter.get("/:productId/", async (req, res, next) => {
 
 reviewsRouter.get("/:productId/:reviewId", async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { productId } = req.params;
+    const { reviewId } = req.params;
 
-    const review = await ReviewsModel.findById(req.params.reviewId);
-    if (review) {
-      res.send(review);
+    const isProduct = await ProductsModel.findOne({ _id: productId });
+
+    if (isProduct) {
+      const review = isProduct.reviews.find((review) => review._id.toString() === reviewId);
+      if (review) {
+        res.send(review);
+      } else {
+        next(NotFound(`Review with id ${reviewId} not found!`));
+      }
     } else {
-      next(NotFound(`Review with id ${req.params.reviewId} not found!`));
+      next(NotFound(`The product with id: ${productId} is not in our archive`));
     }
   } catch (error) {
     next(error);
   }
 });
 
-reviewsRouter.put("/:reviewId", async (req, res, next) => {
+reviewsRouter.put("/:productId/:reviewId", async (req, res, next) => {
   try {
-    const updatedReview = await ReviewsModel.findByIdAndUpdate(
-      req.params.reviewId, // WHO you want to modify
-      req.body, // HOW you want to modify
-      { new: true, runValidators: true } // OPTIONS. By default findByIdAndUpdate returns the record PRE-MODIFICATION. If you want to get back the updated object --> new:true
-      // By default validation is off here --> runValidators: true
-    );
+    const { productId } = req.params;
+    const { reviewId } = req.params;
 
-    // ******************************************************** ALTERNATIVE METHOD **************************************************
-    /*     const Product = await ProductsModel.findById(req.params.ProductId) // When you do a findById, findOne, etc,... you get back not a PLAIN JS OBJECT but you obtain a MONGOOSE DOCUMENT which is an object with some superpowers
-        Product.firstName = "George"
-        await Product.save()
-        res.send(Product) */
+    const isProduct = await ProductsModel.findById(productId);
 
-    if (updatedReview) {
-      res.send(updatedReview);
+    if (isProduct) {
+      const index = isProduct.reviews.findIndex((review) => review._id.toString() === reviewId);
+      console.log("index: ", index);
+      if (index !== -1) {
+        const oldReview = isProduct.reviews[index];
+        console.log("old review: ", ...oldReview.toObject());
+        const updatedReview = { ...oldReview, ...req.body, updatedAt: new Date() };
+        console.log("updated review: ", updatedReview);
+        isProduct.reviews[index] = updatedReview;
+
+        await isProduct.save();
+
+        res.send({
+          message: `Review with id: ${reviewId} from product: '${isProduct.name}' successfully updated and you can see it below`,
+          updatedReview: updatedReview,
+        });
+      } else {
+        next(NotFound(`Review with id ${reviewId} not found!`));
+      }
     } else {
-      next(NotFound(`Review with id ${req.params.reviewId} not found!`));
+      next(NotFound(`The product with id: ${productId} is not in our archive`));
     }
   } catch (error) {
     next(error);
