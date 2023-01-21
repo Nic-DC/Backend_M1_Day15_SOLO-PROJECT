@@ -12,45 +12,59 @@ reviewsRouter.post("/:productId", checkReviewSchema, triggerBadRequest, async (r
   try {
     const { productId } = req.params;
 
-    const isProduct = await ProductsModel.findByIdAndUpdate(
-      productId,
-      { $push: { reviews: { ...req.body } } },
-      { new: true, runValidators: true }
-    );
-    console.log("isProduct", isProduct);
+    // const isProduct = await ProductsModel.findByIdAndUpdate(
+    //   productId,
+    //   { $push: { reviews: { ...req.body } } },
+    //   { new: true, runValidators: true }
+    // );
+    // console.log("isProduct", isProduct);
+    // if (isProduct) {
+    //   res.status(201).send(isProduct);
+    // } else {
+    //   console.log("hiiioiasd");
+    //   next(NotFound(`No product `));
+    // }
+    const isProduct = await ProductsModel.findById(productId);
+
     if (isProduct) {
-      res.status(201).send(isProduct);
+      const newReview = new ReviewsModel(req.body);
+      isProduct.reviews.push(newReview);
+      await newReview.save();
+      await isProduct.save();
+      res.send({ product: isProduct.name, reviews: isProduct.reviews });
+
+      //     const { _id } = await newReview.save();
+      // res.status(201).send({ _id });
     } else {
-      console.log("hiiioiasd");
-      next(NotFound(`No product `));
+      next(NotFound(`No product with id: ${productId} in our archive`));
     }
-    //const isProduct = await ProductsModel.findById(productId);
-
-    //if (isProduct) {
-    //const newReview = new ReviewsModel(req.body);
-    // isProduct.reviews.push(newReview);
-
-    //}
-
-    // here it happens validation (thanks to Mongoose) of req.body, if it is not ok Mongoose will throw an error
-    // const { _id } = await newReview.save();
-    // res.status(201).send({ _id });
   } catch (error) {
     next(error);
   }
 });
 
-reviewsRouter.get("/", async (req, res, next) => {
+reviewsRouter.get("/:productId/", async (req, res, next) => {
   try {
-    const reviews = await ReviewsModel.find({}, { comment: 1, rate: 1 });
-    res.send(reviews);
+    const { productId } = req.params;
+
+    const isProduct = await ProductsModel.findOne({ _id: productId });
+
+    if (isProduct) {
+      res.send(isProduct.reviews);
+    } else {
+      next(NotFound(`No product with id: ${productId} in our archive`));
+    }
+    // const reviews = await ReviewsModel.find({}, { comment: 1, rate: 1 });
+    // res.send(reviews);
   } catch (error) {
     next(error);
   }
 });
 
-reviewsRouter.get("/:reviewId", async (req, res, next) => {
+reviewsRouter.get("/:productId/:reviewId", async (req, res, next) => {
   try {
+    const { id } = req.params;
+
     const review = await ReviewsModel.findById(req.params.reviewId);
     if (review) {
       res.send(review);
