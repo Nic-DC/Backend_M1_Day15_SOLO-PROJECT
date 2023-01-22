@@ -34,7 +34,23 @@ const productSchema = {
   },
 };
 
+const filterSchema = {
+  category: {
+    in: ["query"],
+    isString: {
+      errorMessage: "category must be in query and type must be string to search!",
+    },
+  },
+  price: {
+    in: ["query"],
+    isNumeric: {
+      errorMessage: "price must be in query and type must be a number to search!",
+    },
+  },
+};
+
 export const checkProductSchema = checkSchema(productSchema);
+export const checkFilterSchema = checkSchema(filterSchema);
 
 export const triggerBadRequest = (req, res, next) => {
   const errorList = validationResult(req);

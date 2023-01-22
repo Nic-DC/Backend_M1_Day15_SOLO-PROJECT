@@ -3,7 +3,7 @@ import createHttpError from "http-errors";
 import q2m from "query-to-mongo";
 
 import ProductsModel from "./model.js";
-import { checkProductSchema, triggerBadRequest } from "./validator.js";
+import { checkProductSchema, checkFilterSchema, triggerBadRequest } from "./validator.js";
 
 const productsRouter = express.Router();
 
@@ -19,8 +19,30 @@ productsRouter.post("/", checkProductSchema, triggerBadRequest, async (req, res,
 
 productsRouter.get("/", async (req, res, next) => {
   try {
-    const products = await ProductsModel.find({}, { name: 1, brand: 1 });
+    const products = await ProductsModel.find({}, { name: 1, category: 1, price: 1 });
     res.send(products);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// FILTER by "category" & "price"
+productsRouter.get("/filter", checkFilterSchema, triggerBadRequest, async (req, res, next) => {
+  try {
+    const { category, price } = req.query;
+
+    const products = await ProductsModel.find({ category, price }, { name: 1, category: 1, price: 1 });
+
+    if (products.length > 0) {
+      res.send(products);
+    } else {
+      next(
+        createHttpError(
+          404,
+          `There are no products that match these 2 criteria: category='${category}' AND price='${price}'`
+        )
+      );
+    }
   } catch (error) {
     next(error);
   }
