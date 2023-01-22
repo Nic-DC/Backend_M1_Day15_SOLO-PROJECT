@@ -6,13 +6,25 @@ import productsRouter from "./api/products/index.js";
 import reviewsRouter from "./api/reviews/index.js";
 import { badRequestHandler, notFoundHandler, genericErrorHandler } from "./errorHandlers.js";
 
-const { PORT } = process.env;
+const { PORT, LOCAL_URL } = process.env;
 
 const server = express();
 // const port = process.env.PORT || 3010;
+// const whiteList = [process.env.FE_DEV_URL, process.env.FE_PROD_URL];
+const whiteList = [LOCAL_URL];
+const corsOptions = {
+  origin: (origin, corsNext) => {
+    console.log("CURRENT ORIGIN", origin);
+    if (!origin || whiteList.indexOf(origin) !== -1) {
+      corsNext(null, true);
+    } else {
+      corsNext(NotFound(`Origin ${origin} is not in the whitelist`));
+    }
+  },
+};
 
 // ******************************* MIDDLEWARES ****************************************
-server.use(cors());
+server.use(cors(corsOptions));
 server.use(express.json());
 
 // ******************************** ENDPOINTS *****************************************
