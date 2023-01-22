@@ -1,5 +1,7 @@
 import express, { Router } from "express";
 import createHttpError from "http-errors";
+import q2m from "query-to-mongo";
+
 import ProductsModel from "./model.js";
 import { checkProductSchema, triggerBadRequest } from "./validator.js";
 
@@ -19,6 +21,27 @@ productsRouter.get("/", async (req, res, next) => {
   try {
     const products = await ProductsModel.find({}, { name: 1, brand: 1 });
     res.send(products);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PAGINATION
+productsRouter.get("/pagination", async (req, res, next) => {
+  try {
+    const mongoQuery = q2m(req.query);
+
+    const total = await ProductsModel.countDocuments(mongoQuery.criteria);
+
+    const products = await ProductsModel.find(mongoQuery.criteria, mongoQuery.options.fields)
+      .limit(mongoQuery.options.limit) // No matter the order of usage of these 3 options, Mongo will ALWAYS go with SORT, then SKIP, then LIMIT
+      .skip(mongoQuery.options.skip)
+      .sort(mongoQuery.options.sort);
+    res.send({
+      links: mongoQuery.links("http://localhost:3010/products/pagination", total),
+      totalPages: Math.ceil(total / mongoQuery.options.limit),
+      products,
+    });
   } catch (error) {
     next(error);
   }
